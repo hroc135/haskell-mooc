@@ -6,7 +6,7 @@ argument-hint: <set> <exercises>
 
 対象ファイル: `exercises/Set$set.hs` , `exercises/Set$set.md`
 対象問題: `$exercises`
-例: `/review 2a 2~4`
+例: `/hs-review 2a 2~4`
 
 ## 前提
 
