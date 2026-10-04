@@ -47,7 +47,7 @@ git status --porcelain -- "${files[@]}"
 
 # ブランチを作成してコミット・プッシュ
 git fetch origin "$BASE_BRANCH"
-git switch -C "$branch" "orign/${BASE_BRANCH}"
+git switch -C "$branch" "origin/${BASE_BRANCH}"
 git add -- "${files[@]}"
 git commit -m "$title"
 git push -u origin "$branch"
