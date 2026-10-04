@@ -6,6 +6,7 @@
 module Set5a where
 
 import Mooc.Todo
+import Data.List (foldl')
 
 ------------------------------------------------------------------------------
 -- Ex 1: Define the type Vehicle that has four constructors: Bike,
@@ -13,6 +14,7 @@ import Mooc.Todo
 --
 -- The constructors don't need any fields.
 
+data Vehicle = Bike | Bus | Tram | Train
 
 ------------------------------------------------------------------------------
 -- Ex 2: Define the type BusTicket that can represent values like these:
@@ -20,6 +22,7 @@ import Mooc.Todo
 --  - MonthlyTicket "January"
 --  - MonthlyTicket "December"
 
+data BusTicket = SingleTicket | MonthlyTicket String
 
 ------------------------------------------------------------------------------
 -- Ex 3: Here's the definition for a datatype ShoppingEntry that
@@ -29,7 +32,7 @@ import Mooc.Todo
 --
 -- Implement the functions totalPrice and buyOneMore below.
 
-data ShoppingEntry = MkShoppingEntry String Double Int
+data ShoppingEntry = MkShoppingEntry { itemName :: String, itemPrice :: Double, itemCount :: Int }
   deriving Show
 
 threeApples :: ShoppingEntry
@@ -48,7 +51,7 @@ twoBananas = MkShoppingEntry "Banana" 1.1 2
 --   totalPrice twoBananas   ==> 2.2
 
 totalPrice :: ShoppingEntry -> Double
-totalPrice = todo
+totalPrice e = itemPrice e * fromIntegral (itemCount e)
 
 -- buyOneMore should increment the count in an entry by one
 --
@@ -56,7 +59,7 @@ totalPrice = todo
 --   buyOneMore twoBananas    ==> MkShoppingEntry "Banana" 1.1 3
 
 buyOneMore :: ShoppingEntry -> ShoppingEntry
-buyOneMore = todo
+buyOneMore e = e { itemCount = itemCount e + 1 }
 
 ------------------------------------------------------------------------------
 -- Ex 4: define a datatype Person, which should contain the age (an
@@ -65,28 +68,28 @@ buyOneMore = todo
 -- Also define a Person value fred, and the functions getAge, getName,
 -- setAge and setName (see below).
 
-data Person = PersonUndefined
+data Person = Person { personAge :: Int, personName :: String }
   deriving Show
 
 -- fred is a person whose name is Fred and age is 90
 fred :: Person
-fred = todo
+fred = Person { personAge = 90, personName = "Fred" }
 
 -- getName returns the name of the person
 getName :: Person -> String
-getName p = todo
+getName = personName
 
 -- getAge returns the age of the person
 getAge :: Person -> Int
-getAge p = todo
+getAge = personAge
 
 -- setName takes a person and returns a new person with the name changed
 setName :: String -> Person -> Person
-setName name p = todo
+setName newName p = p { personName = newName }
 
 -- setAge does likewise for age
 setAge :: Int -> Person -> Person
-setAge age p = todo
+setAge newAge p = p { personAge = newAge }
 
 ------------------------------------------------------------------------------
 -- Ex 5: define a datatype Position which contains two Int values, x
@@ -96,27 +99,32 @@ setAge age p = todo
 --   getY (up (up origin))    ==> 2
 --   getX (up (right origin)) ==> 1
 
-data Position = PositionUndefined
+data Position = Position { positionX, positionY :: Int }
 
 -- origin is a Position value with x and y set to 0
 origin :: Position
-origin = todo
+origin = Position { positionX = 0, positionY = 0 }
 
 -- getX returns the x of a Position
 getX :: Position -> Int
-getX = todo
+getX = positionX
 
 -- getY returns the y of a position
 getY :: Position -> Int
-getY = todo
+getY = positionY
+
+mapPositionX :: (Int -> Int) -> Position -> Position
+mapPositionX f p = p { positionX = f (positionX p) }
+mapPositionY :: (Int -> Int) -> Position -> Position
+mapPositionY f p = p { positionY = f (positionY p) }
 
 -- up increases the y value of a position by one
 up :: Position -> Position
-up = todo
+up = mapPositionY (+1)
 
 -- right increases the x value of a position by one
 right :: Position -> Position
-right = todo
+right = mapPositionX (+1)
 
 ------------------------------------------------------------------------------
 -- Ex 6: Here's a datatype that represents a student. A student can
@@ -130,8 +138,14 @@ data Student = Freshman | NthYear Int | Graduated
 -- on. A 7th year student gets changed to a graduated student. A
 -- graduated student stays graduated even if he studies.
 
+maxYear = 7
+
 study :: Student -> Student
-study = todo
+study Freshman = NthYear 1
+study Graduated = Graduated
+study (NthYear n)
+  | n >= maxYear = Graduated
+  | otherwise = NthYear (n+1)
 
 ------------------------------------------------------------------------------
 -- Ex 7: define a datatype UpDown that represents a counter that can
@@ -150,25 +164,31 @@ study = todo
 -- get (tick (tick (toggle (tick zero))))
 --   ==> -1
 
-data UpDown = UpDownUndefined1 | UpDownUndefined2
+data UpDown = Increasing { upDownCount :: Int }
+            | Decreasing { upDownCount :: Int }
 
 -- zero is an increasing counter with value 0
 zero :: UpDown
-zero = todo
+zero = Increasing { upDownCount = 0 }
 
 -- get returns the counter value
 get :: UpDown -> Int
-get ud = todo
+get = upDownCount
 
 -- tick increases an increasing counter by one or decreases a
 -- decreasing counter by one
 tick :: UpDown -> UpDown
-tick ud = todo
+tick ud = ud { upDownCount = upDownCount ud + tickStep ud }
+
+tickStep :: UpDown -> Int
+tickStep (Increasing _) = 1
+tickStep (Decreasing _) = -1
 
 -- toggle changes an increasing counter into a decreasing counter and
 -- vice versa
 toggle :: UpDown -> UpDown
-toggle ud = todo
+toggle (Increasing count) = Decreasing count
+toggle (Decreasing count) = Increasing count
 
 ------------------------------------------------------------------------------
 -- Ex 8: you'll find a Color datatype below. It has the three basic
@@ -198,7 +218,25 @@ data Color = Red | Green | Blue | Mix Color Color | Invert Color
   deriving Show
 
 rgb :: Color -> [Double]
-rgb col = todo
+rgb = fromRGB . toRGB
+
+data RGB = RGB Double Double Double
+
+toRGB :: Color -> RGB
+toRGB Red = RGB 1 0 0
+toRGB Green = RGB 0 1 0
+toRGB Blue = RGB 0 0 1
+toRGB (Mix c1 c2) = zipRGB (\x y -> (x+y)/2) (toRGB c1) (toRGB c2)
+toRGB (Invert c) = mapRGB (1-) (toRGB c)
+
+fromRGB :: RGB -> [Double]
+fromRGB (RGB r g b) = [r, g, b]
+
+zipRGB :: (Double -> Double -> Double) -> RGB -> RGB -> RGB
+zipRGB f (RGB r1 g1 b1) (RGB r2 g2 b2) = RGB (f r1 r2) (f g1 g2) (f b1 b2)
+
+mapRGB :: (Double -> Double) -> RGB -> RGB
+mapRGB f (RGB r g b) = RGB (f r) (f g) (f b)
 
 ------------------------------------------------------------------------------
 -- Ex 9: define a parameterized datatype OneOrTwo that contains one or
@@ -208,6 +246,7 @@ rgb col = todo
 --   One True         ::  OneOrTwo Bool
 --   Two "cat" "dog"  ::  OneOrTwo String
 
+data OneOrTwo a = One a | Two a a
 
 ------------------------------------------------------------------------------
 -- Ex 10: define a recursive datatype KeyVals for storing a set of
@@ -228,14 +267,15 @@ rgb col = todo
 -- Also define the functions toList and fromList that convert between
 -- KeyVals and lists of pairs.
 
-data KeyVals k v = KeyValsUndefined
+data KeyVals k v = Empty | Pair k v (KeyVals k v)
   deriving Show
 
-toList :: KeyVals k v -> [(k,v)]
-toList = todo
+toList :: KeyVals k v -> [(k, v)]
+toList Empty = []
+toList (Pair key value rest) = (key, value) : toList rest
 
-fromList :: [(k,v)] -> KeyVals k v
-fromList = todo
+fromList :: [(k, v)] -> KeyVals k v
+fromList = foldr (\(key, value) acc -> Pair key value acc) Empty
 
 ------------------------------------------------------------------------------
 -- Ex 11: The data type Nat is the so called Peano
@@ -252,10 +292,14 @@ data Nat = Zero | PlusOne Nat
   deriving (Show,Eq)
 
 fromNat :: Nat -> Int
-fromNat n = todo
+fromNat Zero = 0
+fromNat (PlusOne n) = 1 + fromNat n
 
 toNat :: Int -> Maybe Nat
-toNat z = todo
+toNat i = if i < 0 then Nothing else Just (go i)
+  where
+    go 0 = Zero
+    go j = PlusOne (go (j-1))
 
 ------------------------------------------------------------------------------
 -- Ex 12: While pleasingly simple in its definition, the Nat datatype is not
@@ -315,10 +359,20 @@ inc (O b) = I b
 inc (I b) = O (inc b)
 
 prettyPrint :: Bin -> String
-prettyPrint = todo
+prettyPrint = go ""
+  where
+    go acc End = acc
+    go acc (O b) = go ('0':acc) b
+    go acc (I b) = go ('1':acc) b
 
 fromBin :: Bin -> Int
-fromBin = todo
+fromBin End = 0
+fromBin (O b) = 2 * fromBin b
+fromBin (I b) = 1 + 2 * fromBin b
 
 toBin :: Int -> Bin
-toBin = todo
+toBin 0 = O End
+toBin 1 = I End
+toBin n = if even n then O (toBin nextN) else I (toBin nextN)
+  where
+    nextN = div n 2
